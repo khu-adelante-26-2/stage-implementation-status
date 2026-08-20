@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>노천극장 대기 와이어프레임</title>
+  <style>
+    :root {
+      --ink: #191919; --muted: #6f6f6f; --line: #dedede; --canvas: #f4f4f4;
+      --brand: #ed4f2f; --brand-dark: #b92f19; --brand-soft: #fff0eb; --blue: #1769e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); line-height: 1.6; letter-spacing: -.012em; }
+    main { max-width: 720px; margin: 0 auto; padding: 72px 24px 96px; }
+    .eyebrow { display: inline-block; margin-bottom: 14px; padding: 5px 11px; border-radius: 999px; color: var(--brand-dark); background: var(--brand-soft); font-size: .72rem; font-weight: 850; letter-spacing: .04em; }
+    h1 { margin: 0 0 12px; font-size: 2rem; letter-spacing: -.03em; }
+    p.lead { margin: 0 0 28px; color: var(--muted); font-size: 1.02rem; }
+    .card { display: block; padding: 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: #fff; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgb(0 0 0 / 5%); }
+    .card:hover { border-color: var(--brand); }
+    .card b { display: block; font-size: 1.1rem; }
+    .card span { color: var(--muted); font-size: .9rem; }
+    .card .go { display: inline-block; margin-top: 12px; color: var(--brand-dark); font-weight: 850; }
+    ul.notes { margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: .92rem; }
+    ul.notes li { padding: 7px 0 7px 20px; position: relative; }
+    ul.notes li::before { content: "·"; position: absolute; left: 6px; color: var(--brand); font-weight: 900; }
+    footer { margin-top: 34px; color: #9a9a9a; font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="eyebrow">STAGE · 와이어프레임 전용</span>
+    <h1>노천극장 대기 시스템 와이어프레임</h1>
+    <p class="lead">축제 플랫폼 <b>노천극장(Stage) 대기 기능</b>의 기기별 연결 화면 흐름만 공개하는 저장소입니다. 이 저장소는 구현 현황·진행률을 추적하지 않고 와이어프레임만 관리합니다.</p>
+
+    <a class="card" href="wireframes.html">
+      <b>연결 와이어프레임 보기</b>
+      <span>게이트 iPad · 사용자 iPhone · 게이트 운영진 iPhone을 하나의 흐름으로 연결한 저충실도 화면</span>
+      <span class="go">wireframes.html 열기 →</span>
+    </a>
+
+    <ul class="notes">
+      <li>표시 범위: 게이트 앞 대기 등록 iPad, 사용자 휴대폰 대기 현황, 게이트 운영진 휴대폰</li>
+      <li>노천극장은 안전을 위한 최대 수용 인원 관리가 목적이라 시스템이 정원·현재 인원을 들고 있지 않고, 대기 순서만 관리합니다. 정원 판단은 현장 운영진이 직접 합니다.</li>
+      <li>호출 후 15분이 지나면 자동으로 미도착(NO_SHOW) 처리되며, 이 시간은 고정입니다.</li>
+      <li>저충실도 와이어프레임이며 실제 UI·색상·문구를 확정하지 않습니다. 카카오 알림톡은 어댑터 연동 전 단계입니다.</li>
+    </ul>
+
+    <footer>khu-adelante-26-2 · 노천극장 대기 와이어프레임</footer>
+  </main>
+</body>
+</html>

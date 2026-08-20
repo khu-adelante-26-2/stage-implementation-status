@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>노천극장 대기 전체 연결 와이어프레임</title>
+  <style>
+    :root {
+      --ink: #191919;
+      --muted: #6f6f6f;
+      --line: #dedede;
+      --surface: #fff;
+      --canvas: #e9e9e9;
+      --brand: #ed4f2f;
+      --brand-dark: #b92f19;
+      --brand-soft: #fff0eb;
+      --blue: #1769e0;
+      --blue-soft: #edf4ff;
+      --red: #d92d20;
+      --red-dark: #a51d14;
+      --red-soft: #fff1f0;
+      --green: #177245;
+      --green-soft: #edf8f2;
+      --yellow: #8b5e00;
+      --yellow-soft: #fff6d8;
+      --shadow-sm: 0 2px 7px rgb(0 0 0 / 9%);
+      --shadow-lg: 0 18px 46px rgb(0 0 0 / 18%);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); line-height: 1.48; letter-spacing: -.014em; }
+    h1, h2, h3, p { margin-top: 0; }
+
+    .board-scroll { overflow-x: auto; padding: 34px; }
+    .board {
+      width: 5000px;
+      min-height: 3900px;
+      padding: 34px;
+      border: 1px solid #d4d4d4;
+      border-radius: 18px;
+      background-color: #fff;
+      background-image: radial-gradient(#dedede 1px, transparent 1px);
+      background-size: 20px 20px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .lane {
+      position: relative;
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      min-height: 690px;
+      border-top: 2px solid #dadada;
+    }
+
+    .lane:first-child { border-top: 0; }
+    .lane-label { padding: 34px 24px 20px 8px; }
+    .lane-label span { display: inline-block; width: 12px; height: 12px; margin-right: 7px; border-radius: 50%; }
+    .lane-label h2 { margin-bottom: 8px; font-size: 1.08rem; letter-spacing: -.02em; }
+    .lane-label p { color: var(--muted); font-size: .82rem; line-height: 1.65; }
+    .lane--ipad .lane-label span { background: var(--brand); }
+    .lane--user .lane-label span { background: var(--green); }
+    .lane--staff .lane-label span { background: var(--red); }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 34px 0 50px;
+    }
+
+    .node { flex: 0 0 auto; }
+    .node-label { margin: 0 0 11px; color: #545454; font-size: .78rem; font-weight: 850; letter-spacing: .01em; text-align: center; }
+    .node-state { margin: -7px 0 10px; color: var(--muted); font-size: .65rem; font-weight: 800; text-align: center; }
+    .connector { position: relative; flex: 0 0 82px; height: 2px; margin-top: 24px; background: #8d9a96; }
+    .connector::after { content: ""; position: absolute; top: -5px; right: -1px; border: 6px solid transparent; border-left: 9px solid #8d9a96; }
+    .connector span { position: absolute; right: -25px; bottom: 12px; left: -25px; color: #66736f; font-size: .7rem; font-weight: 800; text-align: center; white-space: nowrap; }
+    .connector--event { background: var(--brand); }
+    .connector--event::after { border-left-color: var(--brand); }
+    .connector--branch { width: 48px; flex-basis: 48px; }
+
+    .device {
+      position: relative;
+      overflow: hidden;
+      border: 8px solid #141414;
+      background: #fff;
+      box-shadow: 0 16px 35px rgb(23 33 31 / 20%);
+    }
+
+    .iphone { width: 286px; height: 590px; border-radius: 42px; }
+    .iphone::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      top: 8px;
+      left: 50%;
+      width: 92px;
+      height: 24px;
+      border-radius: 11px;
+      background: #141414;
+      transform: translateX(-50%);
+    }
+
+    .ipad-device { width: 720px; height: 480px; border-width: 10px; border-radius: 32px; }
+    .ipad-device::before { content: ""; position: absolute; z-index: 2; top: 8px; left: 50%; width: 7px; height: 7px; border-radius: 50%; background: #555; }
+    .screen { height: 100%; padding: 42px 18px 22px; overflow: hidden; background: #f8f8f8; font-size: .78rem; }
+    .ipad-device .screen { padding: 24px 28px; overflow: visible; background: #fff; font-size: .88rem; }
+
+    .mini-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; color: var(--muted); font-size: .67rem; font-weight: 750; }
+    .mini-title { margin: 0 0 6px; font-size: 1.12rem; line-height: 1.25; letter-spacing: -.03em; }
+    .mini-copy { margin: 0 0 14px; color: var(--muted); line-height: 1.55; }
+    .wire-box { padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+    .wire-box + .wire-box { margin-top: 10px; }
+    .wire-input { height: 42px; margin: 6px 0 10px; border: 1.5px solid #a9a9a9; border-radius: 8px; background: #fff; }
+    .wire-button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 46px; padding: 10px; border-radius: 8px; color: #fff; background: var(--brand); font-weight: 850; text-align: center; }
+    .wire-button--outline { border: 1px solid #b9c4c0; color: var(--ink); background: #fff; box-shadow: none; }
+    .wire-button--danger { background: var(--red); box-shadow: none; }
+    .wire-button--green { background: var(--green); }
+    .wire-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+    .wire-row + .wire-row { margin-top: 7px; }
+    .muted { color: var(--muted); }
+    .tag { display: inline-block; padding: 4px 7px; border-radius: 5px; background: #ededed; font-size: .64rem; font-weight: 850; }
+    .tag--blue { color: #214d9f; background: var(--blue-soft); }
+    .tag--red { color: #8c2020; background: var(--red-soft); }
+    .tag--green { color: #175f3a; background: var(--green-soft); }
+
+    .phone-number { margin: 18px 0 6px; font-size: 3.5rem; font-weight: 900; letter-spacing: -.08em; line-height: 1; text-align: center; }
+    .phone-number small { margin-left: 4px; font-size: .75rem; letter-spacing: 0; }
+    .center { text-align: center; }
+    .status-headline { margin: 12px 0 5px; font-size: 1rem; text-align: center; }
+    .status-copy { color: var(--muted); text-align: center; }
+    .status-frame { border-top: 5px solid var(--blue); }
+    .status-frame--called { border-top-color: var(--red); background: #fff8fa; }
+    .status-frame--done { border-top-color: var(--green); }
+
+    .stepper { display: grid; grid-template-columns: 44px 1fr 44px; gap: 9px; align-items: center; margin: 8px 0 14px; }
+    .stepper span { min-height: 44px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-weight: 900; text-align: center; }
+    .stepper strong { font-size: 1.1rem; text-align: center; }
+    .receipt { display: grid; height: 100%; place-content: center; text-align: center; }
+    .receipt-check { width: 56px; height: 56px; margin: 0 auto 12px; padding-top: 11px; border-radius: 50%; color: #fff; background: var(--green); font-size: 1.35rem; }
+
+    .kakao { background: #f8e965; }
+    .kakao-header { margin: -42px -18px 18px; padding: 44px 18px 13px; background: #f3dc33; font-weight: 850; }
+    .bubble { padding: 15px; border-radius: 5px 16px 16px 16px; background: #fff; box-shadow: var(--shadow-sm); line-height: 1.65; }
+    .bubble .link-button { display: block; margin-top: 12px; padding: 8px; border-radius: 6px; background: #eceff1; font-weight: 700; text-align: center; }
+
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+    .summary-grid .wire-box { margin: 0; padding: 8px; }
+    .summary-grid strong { display: block; font-size: 1rem; }
+    .waiting-item { padding: 12px; border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 11px; background: #fff; }
+    .waiting-item + .waiting-item { margin-top: 6px; }
+    .waiting-item--called { border-left-color: var(--red); background: var(--red-soft); }
+    .two-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 7px; }
+    .dialog { position: absolute; right: 14px; bottom: 42px; left: 14px; z-index: 6; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: #fff; box-shadow: var(--shadow-lg); }
+    .dialog h4 { margin: 0 0 6px; font-size: 1rem; letter-spacing: -.02em; }
+    .dialog p { margin: 0 0 9px; color: var(--muted); }
+    .settings-row { margin-bottom: 11px; }
+    .settings-row strong { display: block; margin-bottom: 4px; }
+    .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .presets span { padding: 7px 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-weight: 750; text-align: center; }
+    .proposal-note { display: inline-block; margin-top: 7px; padding-left: 8px; border-left: 3px solid var(--brand); color: #555; font-weight: 850; }
+    .staff-screen { padding-bottom: 66px; }
+    .staff-summary { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 -18px 12px; border-block: 1px solid var(--line); background: #fff; }
+    .staff-summary span { padding: 11px 6px; border-right: 1px solid var(--line); color: var(--muted); font-size: .67rem; text-align: center; }
+    .staff-summary span:last-child { border-right: 0; }
+    .staff-summary b { display: block; margin-top: 1px; color: var(--ink); font-size: .92rem; }
+    .staff-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 12px 0 7px;
+      font-weight: 900;
+    }
+    .staff-section-title small { color: var(--muted); font-weight: 600; }
+    .staff-task { margin: 0 -18px; padding: 12px 18px; border-top: 1px solid var(--line); background: #fff; }
+    .staff-task:last-of-type { border-bottom: 1px solid var(--line); }
+    .staff-task--urgent { border-left: 4px solid var(--brand); padding-left: 14px; background: #fffaf8; }
+    .staff-task--over { border-left: 4px solid var(--red); padding-left: 14px; background: #fff8f7; }
+    .staff-action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 9px;
+    }
+    .staff-action-row .wire-button { padding: 7px 4px; }
+    .staff-nav {
+      position: absolute;
+      z-index: 3;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      min-height: 58px;
+      border-top: 1px solid var(--line);
+      background: rgb(255 255 255 / 97%);
+      backdrop-filter: blur(8px);
+    }
+    .staff-nav span { display: grid; place-items: center; padding: 12px 2px 9px; color: var(--muted); font-size: .68rem; font-weight: 850; text-align: center; }
+    .staff-nav .active { color: var(--blue); box-shadow: inset 0 3px var(--blue); }
+    .staff-sheet { right: 0; bottom: 0; left: 0; z-index: 7; border: 0; border-radius: 18px 18px 0 0; }
+    .dev-login-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px; }
+    .dev-login-grid span { padding: 5px 2px; border: 1px solid var(--line); border-radius: 5px; text-align: center; }
+
+    .handoff {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: -26px 0 22px 190px;
+      color: var(--brand-dark);
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .handoff::before { content: "↳"; font-size: 1.6rem; }
+    .handoff span { padding: 8px 12px; border: 1px dashed var(--brand); border-radius: 10px; background: var(--brand-soft); }
+
+    .branch-stack { display: grid; gap: 12px; }
+    .compact-node { display: flex; align-items: center; gap: 10px; }
+    .compact-node .iphone { width: 245px; height: 500px; }
+    .compact-node .screen { font-size: .72rem; }
+    .modal-scrim { position: absolute; z-index: 5; inset: 0; background: rgb(23 33 31 / 55%); }
+    .staff-modal {
+      position: absolute;
+      z-index: 8;
+      top: 50%;
+      right: 16px;
+      left: 16px;
+      padding: 18px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 24px 55px rgb(0 0 0 / 34%);
+      transform: translateY(-50%);
+    }
+    .staff-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .staff-modal-head h4 { margin: 0; font-size: 1.02rem; letter-spacing: -.025em; }
+    .modal-close { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 50%; color: var(--muted); background: #eeeeee; font-size: 1.08rem; font-weight: 900; }
+    .modal-time { margin: 14px 0 2px; color: var(--brand-dark); font-size: 2rem; font-weight: 900; letter-spacing: -.05em; }
+    .modal-detail { display: grid; gap: 5px; margin: 12px 0; padding: 10px; border-radius: 8px; background: #f2f2f2; }
+    .modal-warning { margin: 10px 0; padding: 9px 10px; border-radius: 10px; color: #8a4b05; background: var(--yellow-soft); line-height: 1.5; }
+    .stacked-actions { display: grid; gap: 7px; }
+    .brand-mark {
+      display: grid;
+      width: 52px;
+      height: 52px;
+      margin: 12px auto;
+      place-items: center;
+      border-radius: 12px;
+      color: #fff;
+      background: #202020;
+      font-size: 1rem;
+      font-weight: 950;
+    }
+    .field-label { display: block; margin: 12px 0 5px; color: #4f4f4f; font-size: .69rem; font-weight: 850; }
+    .field-value { display: flex; align-items: center; min-height: 44px; padding: 0 11px; border: 1.5px solid #bdbdbd; border-radius: 8px; background: #fff; }
+    .switch { display: inline-flex; width: 34px; height: 20px; align-items: center; justify-content: flex-end; padding: 2px; border-radius: 999px; background: var(--blue); }
+    .switch::after { content: ""; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); }
+    .sync-dot::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 4px; border-radius: 50%; background: #20a36f; }
+    .kicker { margin: 0 0 4px; color: #555; font-size: .67rem; font-weight: 900; letter-spacing: .06em; }
+    .screen-heading { margin-bottom: 14px; }
+    .screen-heading h3 { margin: 0 0 4px; font-size: 1.18rem; letter-spacing: -.035em; }
+    .screen-heading p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .staff-meta { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .67rem; }
+    .staff-number { font-size: 1.08rem; font-weight: 950; letter-spacing: -.025em; }
+    .staff-primary-action { display: grid; min-width: 58px; min-height: 44px; place-items: center; margin: -6px -5px -6px 0; border-radius: 8px; color: #fff; background: var(--blue); font-weight: 900; }
+    .phone-help { margin-top: 10px; color: var(--muted); font-size: .66rem; line-height: 1.55; text-align: center; }
+    .modal-subtitle { margin: 5px 0 0; color: var(--muted); }
+
+    /* 현장 키오스크: 주점 대기 와이어프레임과 같은 분할형 정보 구조를 노천극장 게이트에 재사용 */
+    .kiosk-shell { display: grid; grid-template-columns: 205px 1fr; gap: 22px; height: 100%; }
+    .kiosk-summary { display: flex; flex-direction: column; padding: 28px 24px; border-radius: 16px; color: #fff; background: #202020; }
+    .kiosk-summary .venue { font-size: .82rem; font-weight: 850; }
+    .kiosk-summary .eyebrow { margin-top: auto; color: #bfbfbf; font-size: .7rem; font-weight: 750; }
+    .kiosk-summary .queue-count { margin: 5px 0 0; font-size: 3.1rem; font-weight: 950; letter-spacing: -.08em; line-height: 1; }
+    .kiosk-summary .queue-count small { margin-left: 4px; font-size: .82rem; letter-spacing: 0; }
+    .kiosk-summary .estimate { margin-top: 14px; padding-top: 14px; border-top: 1px solid #484848; color: #d7d7d7; }
+    .kiosk-summary .estimate b { display: block; margin-top: 2px; color: #fff; font-size: 1.12rem; }
+    .kiosk-summary .privacy { margin: 18px 0 0; color: #a8a8a8; font-size: .66rem; line-height: 1.55; }
+    .kiosk-form { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 18px; min-width: 0; }
+    .kiosk-fields { display: flex; min-width: 0; flex-direction: column; }
+    .kiosk-title { margin: 5px 0 4px; font-size: 1.52rem; letter-spacing: -.045em; }
+    .kiosk-desc { margin-bottom: 18px; color: var(--muted); }
+    .kiosk-label { margin-bottom: 6px; font-size: .74rem; font-weight: 850; }
+    .kiosk-phone { display: flex; min-height: 58px; align-items: center; padding: 0 16px; border: 2px solid #c9c9c9; border-radius: 9px; color: #a0a0a0; background: #fff; font-size: 1.25rem; font-weight: 800; letter-spacing: .04em; }
+    .kiosk-phone--active { border-color: var(--brand); color: var(--ink); box-shadow: 0 0 0 3px var(--brand-soft); }
+    .kiosk-party { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; align-items: center; margin-top: 14px; }
+    .kiosk-party span { display: grid; min-height: 50px; place-items: center; border: 1px solid #cfcfcf; border-radius: 8px; background: #fff; font-size: 1.2rem; font-weight: 800; }
+    .kiosk-party strong { font-size: 1.2rem; text-align: center; }
+    .kiosk-submit { margin-top: auto; min-height: 54px; font-size: .92rem; }
+    .kiosk-privacy-note { margin: 7px 0 0; color: #777; font-size: .57rem; line-height: 1.45; }
+    .kiosk-privacy-note a { color: #555; font-weight: 850; text-decoration: underline; }
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: end; }
+    .numpad span { display: grid; min-height: 56px; place-items: center; border: 1px solid #d2d2d2; border-radius: 8px; background: #f7f7f7; font-size: 1.15rem; font-weight: 780; }
+    .numpad .key-muted { color: #747474; font-size: .8rem; }
+    .kiosk-success { display: grid; width: 510px; height: 100%; margin: 0 auto; place-content: center; text-align: center; }
+    .kiosk-success h3 { margin: 0 0 4px; font-size: 1.45rem; }
+    .kiosk-ticket { margin: 12px 0 4px; font-size: 4rem; font-weight: 950; letter-spacing: -.08em; line-height: 1; }
+    .kiosk-ticket small { margin-left: 6px; font-size: .92rem; letter-spacing: 0; }
+    .kiosk-result-meta { display: flex; justify-content: center; gap: 22px; margin: 10px 0 20px; color: var(--muted); }
+    .kiosk-result-meta b { color: var(--ink); }
+    .kiosk-reset { color: var(--muted); font-size: .68rem; }
+    .kiosk-pause { display: grid; height: 100%; place-content: center; text-align: center; }
+    .kiosk-pause-mark { width: 52px; height: 52px; margin: 0 auto 15px; padding-top: 12px; border-radius: 50%; color: #555; background: #ededed; font-size: 1.2rem; font-weight: 900; }
+
+    /* 사용자 상태 페이지: Waitwhile류의 상태·다음 행동 중심 구조 */
+    .status-page { margin: -6px -18px -22px; padding: 0 18px 26px; background: #fff; }
+    .page-appbar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; border-bottom: 1px solid #ececec; font-size: .7rem; }
+    .page-appbar b { font-size: .82rem; }
+    .page-appbar .live { color: var(--green); font-weight: 800; }
+    .queue-title { margin: 22px 0 2px; color: var(--muted); font-size: .7rem; text-align: center; }
+    .queue-ticket { margin: 0 0 13px; font-size: 3.8rem; font-weight: 950; letter-spacing: -.08em; line-height: 1; text-align: center; }
+    .queue-ticket small { margin-left: 4px; font-size: .72rem; letter-spacing: 0; }
+    .status-banner { margin: 0 -2px 14px; padding: 14px; border-left: 4px solid var(--blue); background: var(--blue-soft); }
+    .status-banner--called { border-left-color: var(--brand); background: var(--brand-soft); }
+    .status-banner--done { border-left-color: var(--green); background: var(--green-soft); }
+    .status-banner--stale { border-left-color: var(--yellow); background: var(--yellow-soft); }
+    .status-banner strong { display: block; margin-bottom: 3px; font-size: .95rem; }
+    .status-banner p { margin: 0; color: #555; line-height: 1.55; }
+    .info-list { margin: 0; border-block: 1px solid #e8e8e8; }
+    .info-row { display: flex; min-height: 43px; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; }
+    .info-row:last-child { border-bottom: 0; }
+    .info-row span { color: var(--muted); }
+    .status-footnote { margin: 13px 0 0; color: var(--muted); font-size: .67rem; line-height: 1.55; text-align: center; }
+    .status-sync { display: flex; min-height: 34px; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; color: var(--muted); font-size: .64rem; }
+    .status-sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px rgb(36 132 84 / 12%); }
+    .status-sync--stale { color: #8a4b05; font-weight: 800; }
+    .status-sync--stale::before { background: var(--yellow); box-shadow: 0 0 0 3px rgb(139 94 0 / 12%); }
+
+    /* 직원 휴대폰: OpenTable iPhone의 가벼운 리스트와 문맥 유지형 시트를 참고 */
+    .staff-appbar { display: flex; min-height: 42px; align-items: center; justify-content: space-between; margin: -3px 0 10px; border-bottom: 1px solid var(--line); }
+    .staff-appbar b { font-size: .85rem; }
+    .staff-appbar span { color: var(--muted); font-size: .67rem; }
+    .staff-segment { display: grid; grid-template-columns: 1fr 1fr; margin: 0 0 11px; padding: 3px; border-radius: 8px; background: #e9e9e9; }
+    .staff-segment span { padding: 7px 4px; color: var(--muted); font-size: .7rem; font-weight: 800; text-align: center; }
+    .staff-segment .active { border-radius: 6px; color: var(--ink); background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 12%); }
+    .section-rule { display: flex; align-items: center; justify-content: space-between; margin: 13px 0 6px; color: #555; font-size: .7rem; font-weight: 850; }
+    .section-rule small { color: var(--muted); font-weight: 650; }
+    .inline-link { color: var(--blue); font-weight: 850; }
+    .overdue { color: var(--red); font-weight: 900; }
+    .sheet-handle { width: 34px; height: 4px; margin: -8px auto 13px; border-radius: 999px; background: #d1d1d1; }
+
+    /* 계정 발급 뒤 최초 영업 준비: 한 화면 한 결정, 완료 뒤에는 설정 탭에서 재진입 */
+    .onboarding-progress { margin-bottom: 18px; }
+    .onboarding-progress .progress-copy { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--muted); font-size: .66rem; font-weight: 750; }
+    .progress-track { height: 4px; overflow: hidden; border-radius: 999px; background: #e3e3e3; }
+    .progress-track span { display: block; height: 100%; background: var(--blue); }
+    .readonly-card { margin: 14px 0; border-block: 1px solid var(--line); background: #fff; }
+    .readonly-row { display: grid; grid-template-columns: 62px 1fr; gap: 8px; min-height: 48px; align-items: center; border-bottom: 1px solid #ededed; }
+    .readonly-row:last-child { border-bottom: 0; }
+    .readonly-row span { color: var(--muted); font-size: .68rem; }
+    .readonly-row b { font-size: .78rem; }
+    .source-note { padding: 10px 11px; border-left: 3px solid var(--blue); color: #4e4e4e; background: var(--blue-soft); font-size: .68rem; line-height: 1.55; }
+    .big-stepper { display: grid; grid-template-columns: 52px 1fr 52px; gap: 10px; align-items: center; margin: 22px 0; }
+    .big-stepper span { display: grid; min-height: 52px; place-items: center; border: 1px solid #cfcfcf; border-radius: 8px; background: #fff; font-size: 1.25rem; font-weight: 900; }
+    .big-stepper strong { font-size: 1.45rem; text-align: center; }
+    .choice-list { display: grid; gap: 9px; margin: 16px 0; }
+    .choice-card { padding: 13px; border: 1.5px solid #d2d2d2; border-radius: 9px; background: #fff; }
+    .choice-card b { display: block; margin-bottom: 3px; }
+    .choice-card small { color: var(--muted); line-height: 1.45; }
+    .choice-card--selected { border-color: var(--blue); background: var(--blue-soft); box-shadow: inset 4px 0 var(--blue); }
+    .onboarding-footer { display: grid; grid-template-columns: 76px 1fr; gap: 8px; margin-top: 16px; }
+    .onboarding-footer--single { grid-template-columns: 1fr; }
+    .review-list { margin: 14px 0; border-block: 1px solid var(--line); }
+    .review-row { display: flex; min-height: 44px; align-items: center; justify-content: space-between; border-bottom: 1px solid #ededed; }
+    .review-row:last-child { border-bottom: 0; }
+    .review-row span { color: var(--muted); }
+    .review-row b { text-align: right; }
+    .settings-list { margin: 12px -18px 0; border-block: 1px solid var(--line); background: #fff; }
+    .settings-item { display: flex; min-height: 58px; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid #ededed; }
+    .settings-item:last-child { border-bottom: 0; }
+    .settings-item span { display: block; color: var(--muted); font-size: .66rem; }
+    .settings-item b { display: block; margin-bottom: 2px; font-size: .82rem; }
+    .settings-item strong { color: var(--blue); font-size: .72rem; }
+    .full-phone { color: #272727; font-size: .72rem; font-weight: 850; letter-spacing: .02em; }
+    .privacy-boundary { margin: 10px 0; padding: 9px 10px; border-left: 3px solid #555; color: #555; background: #f0f0f0; font-size: .65rem; line-height: 1.5; }
+    .danger-change { margin: 11px 0; padding: 10px; border-left: 3px solid var(--red); color: #5e2520; background: var(--red-soft); font-size: .68rem; line-height: 1.5; }
+    .settings-before-after { display: grid; grid-template-columns: 1fr auto 1fr; gap: 7px; align-items: center; margin: 12px 0; }
+    .settings-before-after span { padding: 10px 5px; border: 1px solid var(--line); border-radius: 7px; background: #fff; text-align: center; }
+    .settings-before-after b { color: var(--blue); }
+    .device-status { margin: 14px 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .device-status-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .device-status-head strong { font-size: .84rem; }
+    .device-status-head span { font-size: .68rem; font-weight: 850; }
+    .device-status--online { border-color: #9bc9af; background: var(--green-soft); }
+    .device-status--online .device-status-head span { color: var(--green); }
+    .device-status--offline { border-color: #e1aaa5; background: var(--red-soft); }
+    .device-status--offline .device-status-head span { color: var(--red); }
+    .device-status-row { display: flex; min-height: 32px; align-items: center; justify-content: space-between; border-top: 1px solid rgb(0 0 0 / 8%); font-size: .68rem; }
+    .device-status-row span { color: var(--muted); }
+    .device-status-row b { text-align: right; }
+    .wire-button--disabled { border-color: #d8d8d8; color: #999; background: #e7e7e7; }
+    .kiosk-strip { display: flex; min-height: 31px; align-items: center; justify-content: space-between; margin: -3px 0 8px; padding: 0 9px; border: 1px solid #a9d4b8; border-radius: 7px; color: #245c3b; background: var(--green-soft); font-size: .63rem; }
+    .kiosk-strip b { font-size: .66rem; }
+    .kiosk-strip--offline { border-color: #e1aaa5; color: #7a2a23; background: var(--red-soft); }
+    .table-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 12px 0; }
+    .table-presets span { padding: 9px 2px; border: 1px solid var(--line); border-radius: 7px; background: #fff; font-weight: 800; text-align: center; }
+    .table-presets .active { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+    .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+    .table-card { display: grid; min-height: 74px; place-content: center; padding: 9px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; text-align: center; }
+    .table-card b { display: block; font-size: .86rem; }
+    .table-card small { display: block; margin-top: 3px; color: var(--muted); font-size: .61rem; }
+    .table-card--empty { border-color: #79b08d; color: #24613c; background: var(--green-soft); }
+    .table-card--use { border-color: var(--blue); color: #164985; background: var(--blue-soft); }
+    .table-card--over { border-color: var(--red); color: #7d251e; background: var(--red-soft); }
+    .table-card--selected { outline: 3px solid rgb(35 111 206 / 20%); }
+    .table-grid--compact .table-card { min-height: 50px; }
+    .table-list-note { margin: 9px 0; color: var(--muted); font-size: .64rem; line-height: 1.5; text-align: center; }
+    .status-action { margin-top: 14px; }
+    .status-action-note { margin: 7px 0 0; color: var(--muted); font-size: .64rem; line-height: 1.45; text-align: center; }
+    .status-sheet { right: 0; bottom: 0; left: 0; z-index: 7; border: 0; border-radius: 18px 18px 0 0; }
+
+    /* 노천극장 전용: 게이트 모델(정원 상태 없음) · 15분 고정 노쇼 · 카운트다운 */
+    .gate-summary { display: flex; flex-direction: column; padding: 28px 24px; border-radius: 16px; color: #fff; background: #202020; }
+    .gate-summary .venue { font-size: .82rem; font-weight: 850; }
+    .gate-summary .eyebrow { margin-top: auto; color: #bfbfbf; font-size: .7rem; font-weight: 750; }
+    .gate-summary .queue-count { margin: 5px 0 0; font-size: 3.1rem; font-weight: 950; letter-spacing: -.08em; line-height: 1; }
+    .gate-summary .queue-count small { margin-left: 4px; font-size: .82rem; letter-spacing: 0; }
+    .gate-summary .safety-note { margin: 18px 0 0; color: #a8a8a8; font-size: .66rem; line-height: 1.55; }
+    .countdown-ring { display: grid; width: 96px; height: 96px; margin: 14px auto 8px; place-content: center; border: 6px solid var(--brand-soft); border-top-color: var(--brand); border-radius: 50%; color: var(--brand-dark); font-size: 1.55rem; font-weight: 950; letter-spacing: -.04em; }
+    .countdown-pill { display: inline-block; padding: 4px 9px; border-radius: 999px; color: var(--brand-dark); background: var(--brand-soft); font-size: .74rem; font-weight: 900; letter-spacing: -.02em; }
+    .date-select { margin: 6px 0 0; border: 1.5px solid #bdbdbd; border-radius: 10px; overflow: hidden; background: #fff; }
+    .date-row { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 9px 13px; border-bottom: 1px solid #eee; }
+    .date-row:last-child { border-bottom: 0; }
+    .date-row b { display: block; font-size: .82rem; }
+    .date-row span { color: var(--muted); font-size: .66rem; }
+    .date-row--today { background: var(--blue-soft); box-shadow: inset 4px 0 var(--blue); }
+    .tag--grey { color: #555; background: #ededed; }
+    .tag--yellow { color: #8a4b05; background: var(--yellow-soft); }
+
+    @media print {
+      .board-scroll { overflow: visible; padding: 0; }
+      .board { transform: scale(.28); transform-origin: top left; }
+    }
+  </style>
+</head>
+<body>
+  <main class="board-scroll">
+    <div class="board" style="width:4600px;min-height:3120px">
+
+      <!-- ================= LANE 1 · 게이트 iPad ================= -->
+      <section class="lane lane--ipad">
+        <header class="lane-label"><h2><span></span>게이트 iPad</h2><p>노천극장 게이트 앞 고정 기기<br>사용자가 직접 등록<br>정원은 현장에서 눈으로 관리</p></header>
+        <div class="flow">
+          <article class="node">
+            <p class="node-label">K-01 · 접수 대기</p>
+            <div class="device ipad-device"><div class="screen">
+              <div class="kiosk-shell">
+                <aside class="kiosk-summary">
+                  <span class="venue">노천극장 게이트</span>
+                  <span class="eyebrow">현재 대기</span><div class="queue-count">7<small>팀</small></div>
+                  <p class="privacy">시스템은 대기 순서만 관리합니다. 안전 정원은 게이트 운영진이 현장 인원을 보고 직접 판단합니다.</p>
+                </aside>
+                <section class="kiosk-form">
+                  <div class="kiosk-fields">
+                    <h3 class="kiosk-title">대기 등록</h3><p class="kiosk-desc">대표자 연락처를 입력해 주세요.</p>
+                    <span class="kiosk-label">휴대전화 번호</span><div class="kiosk-phone">010-</div>
+                    <span class="kiosk-label" style="margin-top:14px">대기 인원</span>
+                    <div class="kiosk-party"><span>−</span><strong>2명</strong><span>＋</span></div>
+                    <span class="wire-button kiosk-submit" style="background:#bdbdbd">연락처를 입력해 주세요</span>
+                    <p class="kiosk-privacy-note">대기 등록을 누르면 <a href="#">개인정보 수집·이용 안내</a>에 동의한 것으로 봅니다.</p>
+                  </div>
+                  <div class="numpad" aria-label="숫자 키패드"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="key-muted">전체 삭제</span><span>0</span><span class="key-muted">⌫</span></div>
+                </section>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector"><span>입력·등록</span></div>
+          <article class="node">
+            <p class="node-label">K-02 · 입력 완료</p>
+            <div class="device ipad-device"><div class="screen">
+              <div class="kiosk-shell">
+                <aside class="kiosk-summary">
+                  <span class="venue">노천극장 게이트</span>
+                  <span class="eyebrow">현재 대기</span><div class="queue-count">7<small>팀</small></div>
+                  <p class="privacy">시스템은 대기 순서만 관리합니다. 안전 정원은 게이트 운영진이 현장 인원을 보고 직접 판단합니다.</p>
+                </aside>
+                <section class="kiosk-form">
+                  <div class="kiosk-fields">
+                    <h3 class="kiosk-title">대기 등록</h3><p class="kiosk-desc">입력한 정보를 확인해 주세요.</p>
+                    <span class="kiosk-label">휴대전화 번호</span><div class="kiosk-phone kiosk-phone--active">010-1234-5678</div>
+                    <span class="kiosk-label" style="margin-top:14px">대기 인원</span>
+                    <div class="kiosk-party"><span>−</span><strong>5명</strong><span>＋</span></div>
+                    <span class="wire-button kiosk-submit">5명 대기 등록</span>
+                    <p class="kiosk-privacy-note">대기 등록을 누르면 <a href="#">개인정보 수집·이용 안내</a>에 동의한 것으로 봅니다.</p>
+                  </div>
+                  <div class="numpad" aria-label="숫자 키패드"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="key-muted">전체 삭제</span><span>0</span><span class="key-muted">⌫</span></div>
+                </section>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>WAITING 저장</span></div>
+          <article class="node">
+            <p class="node-label">K-03 · 중복 등록 안내</p><p class="node-state">동일 번호 WAITING/CALLED 존재</p>
+            <div class="device ipad-device"><div class="screen">
+              <div class="kiosk-success">
+                <div class="receipt-check" style="background:var(--red)">!</div><h3>이미 등록된 번호입니다</h3>
+                <p class="muted">010-1234-5678 번호로 진행 중인 대기가 있습니다.<br>기존 대기가 끝난 뒤 새로 등록할 수 있습니다.</p>
+                <div class="kiosk-result-meta"><span>기존 대기번호 <b>12번</b></span><span>상태 <b>대기 중</b></span></div>
+                <span class="wire-button wire-button--outline" style="max-width:300px;margin:0 auto">번호 다시 입력</span>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector"><span>번호 통과 시</span></div>
+          <article class="node">
+            <p class="node-label">K-04 · 등록 완료</p>
+            <div class="device ipad-device"><div class="screen">
+              <div class="kiosk-success">
+                <div class="receipt-check">✓</div><h3>대기 등록이 완료됐습니다</h3><p class="muted">호출 안내는 입력한 연락처로 보내드립니다.</p>
+                <div class="kiosk-ticket">17<small>번</small></div>
+                <div class="kiosk-result-meta"><span>등록 인원 <b>5명</b></span><span>등록 시각 <b>18:22</b></span></div>
+                <span class="wire-button">다음 손님 등록</span><small class="kiosk-reset">15초 뒤 처음 화면으로 돌아갑니다</small>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector connector--branch"><span>운영진이<br>접수 중지</span></div>
+          <article class="node">
+            <p class="node-label">K-05 · 접수 중지</p><p class="node-state">운영진 설정으로 전환</p>
+            <div class="device ipad-device"><div class="screen">
+              <div class="kiosk-pause"><div class="kiosk-pause-mark">Ⅱ</div><h3>대기 접수가 잠시 중단됐습니다</h3><p class="muted">새로운 대기는 받고 있지 않습니다.<br>게이트 운영진에게 문의해 주세요.</p></div>
+            </div></div>
+          </article>
+        </div>
+      </section>
+
+      <div class="handoff"><span>등록 완료 함수가 “대기번호 + 내 대기 현황 링크”를 카카오 알림톡 어댑터에 전달 · <b>알림톡 연동 전이라 현재는 상태(WAITING)만 저장</b></span></div>
+
+      <!-- ================= LANE 2 · 사용자 iPhone ================= -->
+      <section class="lane lane--user">
+        <header class="lane-label"><h2><span></span>사용자 iPhone</h2><p>카카오 링크에서<br>자기 대기만 조회·취소<br>자동으로 상태 확인<br><b class="proposal-note">정원 정보는 표시하지 않음</b></p></header>
+        <div class="flow">
+          <article class="node">
+            <p class="node-label">U-01 · 등록 알림톡</p>
+            <div class="device iphone"><div class="screen kakao">
+              <div class="kakao-header">카카오톡 · 노천극장 대기</div>
+              <div class="bubble"><b>[대기 등록 완료]</b><br>대기번호 17번<br>등록 인원 5명<br><span class="link-button">내 대기 현황 보기</span></div>
+            </div></div>
+          </article>
+          <div class="connector"><span>링크 열기</span></div>
+          <article class="node">
+            <p class="node-label">U-02 · 대기 중</p><p class="node-state">WAITING</p>
+            <div class="device iphone"><div class="screen">
+              <div class="status-page">
+                <div class="page-appbar"><b>노천극장 대기</b><span class="live">● 자동 확인 중</span></div>
+                <p class="queue-title">내 대기번호</p><div class="queue-ticket">17<small>번</small></div>
+                <div class="status-banner"><strong>대기 중입니다</strong><p>현장 상황에 맞춰 게이트 운영진이 순서대로 안내합니다.</p></div>
+                <div class="info-list"><div class="info-row"><span>내 앞 대기</span><b>5팀</b></div><div class="info-row"><span>등록 인원</span><b>5명</b></div><div class="info-row"><span>등록 시각</span><b>18:22</b></div></div>
+                <div class="status-sync">방금 업데이트 · 자동으로 확인 중</div>
+                <span class="wire-button wire-button--outline status-action" style="color:var(--red);border-color:var(--red)">대기 취소</span>
+                <p class="status-action-note">WAITING·CALLED 어느 상태에서도 취소할 수 있습니다.</p>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>대기 취소 선택</span></div>
+          <article class="node">
+            <p class="node-label">U-03 · 취소 확인</p><p class="node-state">본인 확인만 · 비밀번호 없음</p>
+            <div class="device iphone"><div class="screen">
+              <div class="status-page"><div class="page-appbar"><b>노천극장 대기</b><span class="live">● 자동 확인 중</span></div><p class="queue-title">내 대기번호</p><div class="queue-ticket">17<small>번</small></div><div class="status-banner"><strong>대기 중입니다</strong><p>현재 내 앞에 5팀이 있습니다.</p></div></div>
+              <div class="modal-scrim"></div><div class="dialog status-sheet"><div class="sheet-handle"></div><h4>대기를 취소할까요?</h4><p>취소하면 대기 순서가 사라지고, 같은 번호로 다시 등록할 수 있습니다.</p><div class="two-buttons"><span class="wire-button wire-button--outline">아니요</span><span class="wire-button wire-button--danger">취소하기</span></div></div>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>CANCELED</span></div>
+          <article class="node">
+            <p class="node-label">U-04 · 취소 완료</p><p class="node-state">CANCELED · 최종</p>
+            <div class="device iphone"><div class="screen">
+              <div class="status-page">
+                <div class="page-appbar"><b>노천극장 대기</b><span>최종 상태</span></div>
+                <p class="queue-title">대기번호</p><div class="queue-ticket">17<small>번</small></div>
+                <div class="status-banner status-banner--stale"><strong>대기가 취소됐습니다</strong><p>다시 대기하시려면 게이트에서 새로 등록해 주세요.</p></div>
+                <div class="info-list"><div class="info-row"><span>상태</span><b>취소됨</b></div><div class="info-row"><span>취소 시각</span><b>18:30</b></div></div>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector"><span>대기 유지 시</span></div>
+          <article class="node">
+            <p class="node-label">U-05 · 호출 알림톡</p>
+            <div class="device iphone"><div class="screen kakao">
+              <div class="kakao-header">카카오톡 · 노천극장 대기</div>
+              <div class="bubble"><b>[입장 안내]</b><br>17번 손님, <b>15분 이내</b> 노천극장 입구로 와주세요.<br><span class="link-button">내 대기 현황 보기</span></div>
+            </div></div>
+          </article>
+          <div class="connector"><span>같은 링크</span></div>
+          <article class="node">
+            <p class="node-label">U-06 · 호출됨</p><p class="node-state">CALLED · 15분 카운트다운</p>
+            <div class="device iphone"><div class="screen">
+              <div class="status-page">
+                <div class="page-appbar"><b>노천극장 대기</b><span class="live">● 자동 확인 중</span></div>
+                <p class="queue-title">내 대기번호</p><div class="queue-ticket">17<small>번</small></div>
+                <div class="status-banner status-banner--called"><strong>입장 안내를 받았습니다</strong><p>15분 이내에 노천극장 입구로 와주세요.</p></div>
+                <div class="countdown-ring">12:30</div>
+                <div class="info-list"><div class="info-row"><span>등록 인원</span><b>5명</b></div><div class="info-row"><span>호출 시각</span><b>18:41</b></div></div>
+                <div class="status-sync">방금 업데이트 · 자동으로 확인 중</div>
+                <span class="wire-button wire-button--outline status-action" style="color:var(--red);border-color:var(--red)">대기 취소</span>
+                <p class="status-footnote">시간이 지나면 자동으로 대기가 종료(미도착)됩니다.</p>
+              </div>
+            </div></div>
+          </article>
+          <div class="connector"><span>입장/종료</span></div>
+          <div class="branch-stack">
+            <article class="node compact-node">
+              <div><p class="node-label">U-07 · 입장</p><p class="node-state">ENTERED · 최종</p><div class="device iphone"><div class="screen"><div class="status-page"><div class="page-appbar"><b>노천극장 대기</b><span class="live">● 입장</span></div><p class="queue-title">대기번호</p><div class="queue-ticket">17<small>번</small></div><div class="status-banner status-banner--done"><strong>입장이 확인됐습니다</strong><p>즐거운 관람 되세요!</p></div><div class="info-list"><div class="info-row"><span>상태</span><b>입장 완료</b></div><div class="info-row"><span>입장 시각</span><b>18:44</b></div></div></div></div></div></div>
+            </article>
+            <article class="node compact-node">
+              <div><p class="node-label">U-08 · 미도착</p><p class="node-state">NO_SHOW · 15분 경과</p><div class="device iphone"><div class="screen"><div class="status-page"><div class="page-appbar"><b>노천극장 대기</b><span>최종 상태</span></div><p class="queue-title">대기번호</p><div class="queue-ticket">17<small>번</small></div><div class="status-banner status-banner--stale"><strong>대기가 자동으로 종료됐습니다</strong><p>호출 후 15분 안에 도착하지 않아 미도착 처리됐습니다.</p></div><div class="info-list"><div class="info-row"><span>상태</span><b>미도착</b></div><div class="info-row"><span>기준 시간</span><b>15분 (고정)</b></div></div></div></div></div></div>
+            </article>
+            <article class="node compact-node">
+              <div><p class="node-label">U-09 · 연결 지연</p><p class="node-state">폴링 실패 · 마지막 상태 표시</p><div class="device iphone"><div class="screen"><div class="status-page"><div class="page-appbar"><b>노천극장 대기</b><span style="color:var(--yellow);font-weight:800">● 연결 확인 필요</span></div><p class="queue-title">내 대기번호</p><div class="queue-ticket">17<small>번</small></div><div class="status-banner status-banner--stale"><strong>최신 상태를 확인하지 못했습니다</strong><p>표시된 정보는 마지막 확인 결과입니다.</p></div><div class="info-list"><div class="info-row"><span>마지막 업데이트</span><b>1분 전</b></div><div class="info-row"><span>현재 표시 상태</span><b>대기 중</b></div></div><div class="status-sync status-sync--stale">자동 확인을 다시 시도하고 있습니다</div><span class="wire-button wire-button--outline status-action" style="color:var(--blue);border-color:var(--blue)">지금 다시 확인</span></div></div></div></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <div class="handoff"><span>운영진은 정원 자동 계산이 아니라 <b>현장 인원을 눈으로 보고 다음 팀을 직접 호출</b> · 안전 정원 판단은 사람이 담당</span></div>
+
+      <!-- ================= LANE 3 · 게이트 운영진 iPhone ================= -->
+      <section class="lane lane--staff">
+        <header class="lane-label"><h2><span></span>게이트 운영진 iPhone</h2><p>발급 계정으로 로그인<br>대기팀 직접 호출<br>입장·미도착 처리<br><b class="proposal-note">정원 상태 없이 순서만 관리</b></p></header>
+        <div class="flow">
+          <article class="node">
+            <p class="node-label">A-01 · 로그인</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>노천극장 게이트 운영</b><span>직원용</span></div>
+              <div style="margin-top:34px"><h3 class="mini-title" style="font-size:1.45rem">로그인</h3><p class="mini-copy">개발팀에서 발급한 노천극장 계정으로 로그인해 주세요.</p></div>
+              <span class="field-label">아이디</span><div class="field-value">stage-staff-01</div>
+              <span class="field-label">비밀번호</span><div class="field-value">••••••••••••</div>
+              <span class="wire-button" style="margin-top:16px;background:var(--blue)">로그인</span>
+              <p class="phone-help">계정에는 노천극장 게이트가 이미 연결되어 있습니다.<br>다른 서비스 정보는 볼 수 없습니다.</p>
+            </div></div>
+          </article>
+          <div class="connector"><span>Redis 세션</span></div>
+          <article class="node">
+            <p class="node-label">A-02 · 운영 날짜 선택</p><p class="node-state">오늘만 조작 가능</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>운영 날짜</b><span>축제 기간</span></div>
+              <div class="screen-heading"><h3>운영할 날짜를 선택하세요</h3><p>사전 등록된 축제 기간 날짜입니다.</p></div>
+              <div class="date-select">
+                <div class="date-row date-row--today"><div><b>8월 1일 (오늘)</b><span>운영 중</span></div><span class="tag tag--green">운영 중</span></div>
+                <div class="date-row"><div><b>8월 2일</b><span>시작 전</span></div><span class="tag tag--grey">조회 전용</span></div>
+                <div class="date-row"><div><b>8월 3일</b><span>시작 전</span></div><span class="tag tag--grey">조회 전용</span></div>
+              </div>
+              <div class="source-note">오늘이 아닌 날짜를 선택하면 호출·입장·취소 등 조작 버튼이 모두 비활성화됩니다.</div>
+              <nav class="staff-nav"><span class="active">대기팀</span><span>호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector"><span>오늘 선택</span></div>
+          <article class="node">
+            <p class="node-label">A-03 · 대기팀 탭</p><p class="node-state">WAITING · CALLED 목록</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>8월 1일 · 노천극장</b><span class="sync-dot">자동 확인 · 방금</span></div>
+              <div class="staff-summary" style="grid-template-columns:repeat(2,1fr)"><span>대기<b>6팀</b></span><span>호출<b>1팀</b></span></div>
+              <div class="section-rule"><span>호출된 팀</span><small>15분 내 도착 확인</small></div>
+              <div class="staff-task staff-task--urgent"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="countdown-pill">12:30 남음</span></div><div class="staff-meta"><span class="full-phone">010-1234-5678</span><span>·</span><span>18:41 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장</span><span class="wire-button wire-button--outline">미도착</span></div></div>
+              <div class="section-rule"><span>대기 중인 팀</span><small>운영진이 현장 보고 직접 선택</small></div>
+              <div class="staff-task"><div class="wire-row"><span class="staff-number">15번 · 1명</span><span class="staff-primary-action">호출</span></div><div class="staff-meta"><span>12분째 대기</span><span>·</span><span class="full-phone">010-2814-5620</span></div></div>
+              <div class="staff-task"><div class="wire-row"><span class="staff-number">16번 · 6명</span><span class="staff-primary-action">호출</span></div><div class="staff-meta"><span>7분째 대기</span><span>·</span><span class="full-phone">010-9032-1748</span></div></div>
+              <div class="table-list-note">호출 버튼은 항상 활성화됩니다. 정원은 시스템이 계산하지 않고 현장에서 판단합니다.</div>
+              <nav class="staff-nav"><span class="active">대기팀</span><span>호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>팀 직접 선택</span></div>
+          <article class="node">
+            <p class="node-label">A-04 · 호출 확인</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>8월 1일 · 노천극장</b><span class="sync-dot">자동 확인 · 방금</span></div>
+              <div class="staff-task"><div class="wire-row"><span class="staff-number">15번 · 1명</span><span class="tag tag--blue">대기 중</span></div><div class="staff-meta"><span>12분째 대기</span><span>·</span><span class="full-phone">010-2814-5620</span></div></div>
+              <div class="modal-scrim"></div><div class="dialog staff-sheet"><div class="sheet-handle"></div><div class="staff-modal-head"><div><h4>15번 팀을 호출할까요?</h4><p class="modal-subtitle">1명 · 010-2814-5620</p></div><span class="modal-close">×</span></div><p class="modal-warning">알림톡 연동 전입니다. 상태만 CALLED로 바뀌므로 현장에서 직접 안내해 주세요.</p><div class="two-buttons"><span class="wire-button wire-button--outline">취소</span><span class="wire-button" style="background:var(--blue)">호출하기</span></div></div>
+              <nav class="staff-nav"><span class="active">대기팀</span><span>호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector"><span>CALLED</span></div>
+          <article class="node">
+            <p class="node-label">A-05 · 호출 목록</p><p class="node-state">CALLED · 15분 카운트다운</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div><div class="staff-segment"><span>대기팀</span><span class="active">호출</span></div>
+              <div class="staff-task staff-task--urgent"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="countdown-pill">12:30 남음</span></div><div class="staff-meta"><span class="full-phone">010-1234-5678</span><span>·</span><span>18:41 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline" style="color:var(--red);border-color:var(--red)">취소</span></div></div>
+              <div class="staff-task staff-task--over"><div class="wire-row"><span class="staff-number">15번 · 1명</span><span class="countdown-pill">0:48 남음</span></div><div class="staff-meta"><span class="full-phone">010-2814-5620</span><span>·</span><span>18:55 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline" style="color:var(--red);border-color:var(--red)">취소</span></div></div>
+              <div class="table-list-note">15분이 지나면 서버가 자동으로 미도착(NO_SHOW) 처리합니다.</div>
+              <nav class="staff-nav"><span>대기팀</span><span class="active">호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>입장 확인</span></div>
+          <article class="node">
+            <p class="node-label">A-06 · 입장 처리</p><p class="node-state">CALLED → ENTERED</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div><div class="staff-segment"><span>대기팀</span><span class="active">호출</span></div>
+              <div class="staff-task"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="tag tag--red">호출됨</span></div></div>
+              <div class="modal-scrim"></div><section class="staff-modal" aria-label="입장 처리 모달"><div class="staff-modal-head"><div><span class="tag tag--red">호출됨</span><h4 style="margin-top:8px">14번 팀 입장</h4><p class="modal-subtitle">등록 인원 3명 · 010-1234-5678</p></div><span class="modal-close">×</span></div><p class="modal-warning">실제 도착 인원은 현장에서 확인합니다. 부분 도착이어도 입장으로 처리하며, 안전 정원은 운영진이 눈으로 관리합니다.</p><div class="stacked-actions"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline">닫기</span></div></section>
+              <nav class="staff-nav"><span>대기팀</span><span class="active">호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector connector--branch"><span>대기·호출 팀<br>수동 취소</span></div>
+          <article class="node">
+            <p class="node-label">A-07 · 수동 취소</p><p class="node-state">비밀번호 없음 · 관리자 휴대폰</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>16번 팀 취소</b><span>대기 중</span></div>
+              <div class="staff-task"><div class="wire-row"><span class="staff-number">16번 · 6명</span><span class="tag tag--blue">대기 중</span></div><div class="staff-meta"><span class="full-phone">010-9032-1748</span><span>·</span><span>7분째 대기</span></div></div>
+              <div class="modal-scrim"></div><section class="staff-modal" aria-label="수동 취소 모달"><div class="staff-modal-head"><div><h4>16번 팀 대기를 취소할까요?</h4><p class="modal-subtitle">6명 · 010-9032-1748</p></div><span class="modal-close">×</span></div><p class="modal-warning">관리자 휴대폰에서 바로 처리되며 별도 비밀번호 확인은 없습니다. 취소하면 순서가 사라지고 같은 번호로 재등록할 수 있습니다.</p><div class="stacked-actions"><span class="wire-button wire-button--danger">취소 처리</span><span class="wire-button wire-button--outline">그만두기</span></div></section>
+              <nav class="staff-nav"><span class="active">대기팀</span><span>호출</span><span>설정</span></nav>
+            </div></div>
+          </article>
+        </div>
+      </section>
+
+      <div class="handoff"><span>호출 후 15분이 지나면 서버가 자동으로 <b>미도착(NO_SHOW)</b> 처리 · 관리자가 이 시간을 바꾸지 않음(15분 고정)</span></div>
+
+      <!-- ================= LANE 4 · 게이트 운영진 · 설정 ================= -->
+      <section class="lane lane--staff">
+        <header class="lane-label"><h2><span></span>게이트 운영진 · 설정</h2><p>접수 시작·중지 전환<br>노쇼 시간은 고정<br><b class="proposal-note">15분 고정 · 정원 설정 없음</b></p></header>
+        <div class="flow">
+          <article class="node">
+            <p class="node-label">S-01 · 설정 탭</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>8월 1일 · 노천극장</b><span>설정</span></div><div class="screen-heading"><h3>운영 설정</h3><p>변경할 항목을 선택하세요.</p></div>
+              <div class="settings-list"><div class="settings-item"><div><b>대기 접수</b><span>게이트 iPad 신규 등록 허용</span></div><strong style="color:var(--green)">접수 중 ›</strong></div><div class="settings-item"><div><b>자동 미도착 처리</b><span>호출 후 경과 시간 기준</span></div><strong style="color:var(--muted)">15분 · 고정</strong></div><div class="settings-item"><div><b>운영 날짜</b><span>오늘만 조작 가능</span></div><strong>8월 1일 ›</strong></div></div>
+              <div class="privacy-boundary">노쇼 시간(15분)과 안전 정원은 시스템에서 조정하지 않습니다. 정원은 현장에서 사람이 판단합니다.</div>
+              <nav class="staff-nav"><span>대기팀</span><span>호출</span><span class="active">설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector"><span>대기 접수 선택</span></div>
+          <article class="node">
+            <p class="node-label">S-02 · 접수 중지 전환</p><p class="node-state">→ 게이트 iPad 접수 중지(K-05)</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>대기 접수</b><span>설정</span></div><div class="screen-heading"><h3>현재 접수 중입니다</h3><p>게이트 iPad에서 신규 대기를 받고 있습니다.</p></div>
+              <div class="settings-list"><div class="settings-item"><div><b>손님 대기 등록</b><span>iPad 신규 등록 허용</span></div><span class="switch"></span></div></div>
+              <div class="modal-scrim"></div><div class="dialog staff-sheet"><div class="sheet-handle"></div><h4>대기 접수를 중지할까요?</h4><p>중지하면 게이트 iPad에서 새 손님이 등록할 수 없습니다. 기존 대기팀은 그대로 운영합니다.</p><div class="two-buttons"><span class="wire-button wire-button--outline">취소</span><span class="wire-button wire-button--danger">접수 중지</span></div></div>
+              <nav class="staff-nav"><span>대기팀</span><span>호출</span><span class="active">설정</span></nav>
+            </div></div>
+          </article>
+          <div class="connector connector--event"><span>저장 후 복귀</span></div>
+          <article class="node">
+            <p class="node-label">S-03 · 변경 완료</p>
+            <div class="device iphone"><div class="screen staff-screen">
+              <div class="staff-appbar"><b>8월 1일 · 노천극장</b><span class="tag tag--green">저장됨</span></div><div class="screen-heading"><h3>운영 설정</h3><p>마지막 변경이 저장되었습니다.</p></div>
+              <div class="settings-list"><div class="settings-item"><div><b>대기 접수</b><span>iPad 신규 등록</span></div><strong style="color:var(--red)">중지 ›</strong></div><div class="settings-item"><div><b>자동 미도착 처리</b><span>호출 후 경과 시간</span></div><strong style="color:var(--muted)">15분 · 고정</strong></div></div>
+              <div class="source-note" style="margin-top:14px">접수 상태 변경은 감사 기록에 남습니다.</div>
+              <nav class="staff-nav"><span>대기팀</span><span>호출</span><span class="active">설정</span></nav>
+            </div></div>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</body>
+</html>
