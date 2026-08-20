@@ -522,7 +522,7 @@
         </div>
       </section>
 
-      <div class="handoff"><span>등록 완료 함수가 “대기번호 + 내 대기 현황 링크”를 카카오 알림톡 어댑터에 전달 · <b>알림톡 연동 전이라 현재는 상태(WAITING)만 저장</b></span></div>
+      <div class="handoff"><span>등록이 완료되면 <b>“대기번호 + 내 대기 현황 링크”를 카카오 알림톡으로 발송</b>하고 상태를 WAITING으로 저장</span></div>
 
       <!-- ================= LANE 2 · 사용자 iPhone ================= -->
       <section class="lane lane--user">
@@ -671,7 +671,7 @@
             <div class="device iphone"><div class="screen staff-screen">
               <div class="staff-appbar"><b>노천극장 게이트</b><span class="sync-dot">자동 확인 · 방금</span></div>
               <div class="staff-task"><div class="wire-row"><span class="staff-number">15번 · 1명</span><span class="tag tag--blue">대기 중</span></div><div class="staff-meta"><span>12분째 대기</span><span>·</span><span class="full-phone">010-2814-5620</span></div></div>
-              <div class="modal-scrim"></div><div class="dialog staff-sheet"><div class="sheet-handle"></div><div class="staff-modal-head"><div><h4>15번 팀을 호출할까요?</h4><p class="modal-subtitle">1명 · 010-2814-5620</p></div><span class="modal-close">×</span></div><p class="modal-warning">알림톡 연동 전입니다. 상태만 CALLED로 바뀌므로 현장에서 직접 안내해 주세요.</p><div class="two-buttons"><span class="wire-button wire-button--outline">취소</span><span class="wire-button" style="background:var(--blue)">호출하기</span></div></div>
+              <div class="modal-scrim"></div><div class="dialog staff-sheet"><div class="sheet-handle"></div><div class="staff-modal-head"><div><h4>15번 팀을 호출할까요?</h4><p class="modal-subtitle">1명 · 010-2814-5620</p></div><span class="modal-close">×</span></div><p class="modal-subtitle" style="margin:10px 0 0">호출하면 상태가 CALLED로 바뀌고 입장 안내 알림톡이 발송됩니다.</p><div class="two-buttons"><span class="wire-button wire-button--outline">취소</span><span class="wire-button" style="background:var(--blue)">호출하기</span></div></div>
               <nav class="staff-nav"><span class="active">대기팀</span><span>호출</span><span>설정</span></nav>
             </div></div>
           </article>
@@ -679,8 +679,7 @@
           <article class="node">
             <p class="node-label">A-04 · 호출 목록</p><p class="node-state">CALLED · 15분 카운트다운</p>
             <div class="device iphone"><div class="screen staff-screen">
-              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div><div class="staff-segment"><span>대기팀</span><span class="active">호출</span></div>
-              <div class="staff-task staff-task--urgent"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="countdown-pill">12:30 남음</span></div><div class="staff-meta"><span class="full-phone">010-1234-5678</span><span>·</span><span>18:41 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline" style="color:var(--red);border-color:var(--red)">취소</span></div></div>
+              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div>              <div class="staff-task staff-task--urgent"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="countdown-pill">12:30 남음</span></div><div class="staff-meta"><span class="full-phone">010-1234-5678</span><span>·</span><span>18:41 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline" style="color:var(--red);border-color:var(--red)">취소</span></div></div>
               <div class="staff-task staff-task--over"><div class="wire-row"><span class="staff-number">15번 · 1명</span><span class="countdown-pill">0:48 남음</span></div><div class="staff-meta"><span class="full-phone">010-2814-5620</span><span>·</span><span>18:55 호출</span></div><div class="staff-action-row"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline" style="color:var(--red);border-color:var(--red)">취소</span></div></div>
               <div class="table-list-note">15분이 지나면 서버가 자동으로 미도착(NO_SHOW) 처리합니다.</div>
               <nav class="staff-nav"><span>대기팀</span><span class="active">호출</span><span>설정</span></nav>
@@ -690,8 +689,7 @@
           <article class="node">
             <p class="node-label">A-05 · 입장 처리</p><p class="node-state">CALLED → ENTERED</p>
             <div class="device iphone"><div class="screen staff-screen">
-              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div><div class="staff-segment"><span>대기팀</span><span class="active">호출</span></div>
-              <div class="staff-task"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="tag tag--red">호출됨</span></div></div>
+              <div class="staff-appbar"><b>호출 목록</b><span class="sync-dot">자동 확인 · 방금</span></div>              <div class="staff-task"><div class="wire-row"><span class="staff-number">14번 · 3명</span><span class="tag tag--red">호출됨</span></div></div>
               <div class="modal-scrim"></div><section class="staff-modal" aria-label="입장 처리 모달"><div class="staff-modal-head"><div><span class="tag tag--red">호출됨</span><h4 style="margin-top:8px">14번 팀 입장</h4><p class="modal-subtitle">등록 인원 3명 · 010-1234-5678</p></div><span class="modal-close">×</span></div><p class="modal-warning">실제 도착 인원은 현장에서 확인합니다. 부분 도착이어도 입장으로 처리하며, 안전 정원은 운영진이 눈으로 관리합니다.</p><div class="stacked-actions"><span class="wire-button" style="background:var(--blue)">입장 확인</span><span class="wire-button wire-button--outline">닫기</span></div></section>
               <nav class="staff-nav"><span>대기팀</span><span class="active">호출</span><span>설정</span></nav>
             </div></div>
